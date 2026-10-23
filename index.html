@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Свалка — копайся в интернете руками</title>
+<meta name="description" content="Свалка ярлыков: сайты, игры, фильмы и видео в одной куче. Копайся, находи, выкидывай свои находки.">
+<meta property="og:title" content="Свалка">
+<meta property="og:description" content="Копайся в интернете руками: сайты, игры, фильмы и видео в одной куче.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f2b705">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f2b705'/%3E%3Cpath d='M4 26l6-9 5 5 4-7 9 11z' fill='%231e1c19'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Golos+Text:wght@400;600&family=PT+Mono&display=swap">
+<style>
+:root{
+  --ground:#8a8377; --ink:#1e1c19; --paper:#f2ede2; --hazard:#f2b705; --rust:#b4532a; --muted:#5f584e; --ok:#2f6b3f; --bad:#a3291c;
+  --display:'Russo One','Arial Black',Impact,sans-serif;
+  --body:'Golos Text',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'PT Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--ground);color:var(--ink);font:14px var(--body);overflow:hidden}
+[hidden]{display:none!important}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#c:active{cursor:grabbing}
+.bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.bar>*{pointer-events:auto}
+.logo{font-family:var(--display);font-size:26px;line-height:1;background:var(--hazard);color:var(--ink);margin:0;
+  padding:6px 12px 5px;border:3px solid var(--ink);transform:rotate(-2deg);box-shadow:3px 3px 0 var(--ink);letter-spacing:.04em;font-weight:400}
+.search{flex:1 1 220px;min-width:0;display:flex;border:3px solid var(--ink);background:var(--paper);box-shadow:3px 3px 0 var(--ink)}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:16px var(--body);padding:8px 10px;color:var(--ink)}
+.search input:focus{outline:none}
+.search:focus-within{outline:3px solid var(--hazard);outline-offset:2px}
+.count{font:12px var(--mono);color:var(--muted);align-self:center;padding-right:8px;white-space:nowrap}
+.truck{font:12px var(--mono);background:var(--ink);color:var(--hazard);border:3px solid var(--ink);padding:7px 10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+button{font:600 14px var(--body);border:3px solid var(--ink);background:var(--paper);color:var(--ink);padding:7px 12px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+button:hover{background:#fff}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--hazard);outline-offset:2px}
+button.hot{background:var(--hazard)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.legend{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:4;
+  font:11px var(--mono);background:rgba(242,237,226,.9);border:2px solid var(--ink);padding:5px 8px;max-width:calc(100% - 120px);pointer-events:none}
+.help{position:fixed;z-index:6;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));font:600 16px var(--display);width:42px;height:42px;padding:0}
+.sheet{position:fixed;z-index:10;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  width:min(440px,calc(100% - 32px));background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:16px;
+  display:flex;flex-direction:column;gap:10px;max-height:calc(100% - 120px);overflow:auto}
+.sheet h2{font:22px/1.15 var(--display);margin:0;text-wrap:balance;padding-right:32px;font-weight:400}
+.sheet p{margin:0;line-height:1.45}
+.sheet ul{margin:0;padding-left:18px;line-height:1.5}
+.meta{font:12px var(--mono);color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px}
+.chip{display:inline-block;font:12px var(--mono);border:2px solid var(--ink);padding:1px 6px;background:var(--hazard)}
+.chip.w{background:#fff}
+.st-ok{color:var(--ok)} .st-wait{color:var(--rust)} .st-bad{color:var(--bad)}
+.sheet a{color:var(--rust);font-weight:600;word-break:break-all}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.x{position:absolute;top:8px;right:8px;padding:2px 9px;box-shadow:none}
+label{font:600 13px var(--body);display:flex;flex-direction:column;gap:4px}
+.sheet input[type=text],.sheet input[type=url],.sheet select,.sheet textarea{font:16px var(--body);border:2px solid var(--ink);padding:7px 8px;background:#fff;color:var(--ink);width:100%}
+.sheet textarea{resize:vertical;min-height:56px}
+.check{flex-direction:row;align-items:center;gap:8px;font-weight:400}
+.check input{width:18px;height:18px}
+.sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sizes label{border:2px solid var(--ink);padding:6px;text-align:center;font-weight:400;cursor:pointer;background:#fff;position:relative}
+.sizes input{position:absolute;opacity:0}
+.sizes label:has(input:checked){background:var(--hazard)}
+.sizes b{font:16px var(--display);font-weight:400}
+.shine{height:8px;border:2px solid var(--ink);background:#fff;position:relative}
+.shine i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--rust),var(--hazard))}
+.toast{position:fixed;z-index:20;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:10px 14px;font-size:14px;max-width:calc(100% - 32px);border:2px solid var(--hazard)}
+.err{color:var(--bad);font:13px var(--body)}
+.loading{position:fixed;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none;font:20px var(--display);color:var(--paper);text-shadow:2px 2px 0 var(--ink)}
+noscript{position:fixed;inset:0;display:grid;place-items:center;background:var(--ground);color:var(--paper);font:18px var(--body);padding:24px;text-align:center;z-index:50}
+@media (max-width:560px){.bar{gap:6px}.logo{font-size:20px}.search{flex-basis:100%;order:3}.bar button{flex:1;font-size:13px;padding:6px 6px}.long,.legend,.truck{display:none}}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+</head>
+<body>
+<noscript>Свалке нужен JavaScript: без него куча не двигается.</noscript>
+<canvas id="c" aria-label="Интерактивная свалка ярлыков. Нажми на ярлык, чтобы открыть его карточку."></canvas>
+<div class="loading" id="loading">Сгружаем кучу…</div>
+
+<header class="bar">
+  <h1 class="logo">СВАЛКА</h1>
+  <div class="search">
+    <input id="q" type="search" placeholder="Не хочешь копаться? Ищи: игра, кино…" autocomplete="off" aria-label="Поиск по свалке">
+    <span class="count" id="cnt" aria-live="polite"></span>
+  </div>
+  <span class="truck" id="truck" title="Мусоровоз приезжает каждый день в 12:00 по Москве">🚚 —:—</span>
+  <button id="lift" type="button" class="hot">Достать<span class="long"> найденное</span></button>
+  <button id="shake" type="button">Встряхнуть</button>
+  <button id="add" type="button">Выкинуть<span class="long"> ярлык</span></button>
+</header>
+
+<div class="legend">Ржавое никто не открывает: оно тяжелеет и тонет. Блестящее всплывает. На дне спрятан клад.</div>
+<button type="button" class="help" id="help" aria-label="Правила свалки">?</button>
+
+<div class="sheet" id="card" hidden></div>
+
+<form class="sheet" id="form" hidden novalidate>
+  <button type="button" class="x" data-close aria-label="Закрыть">×</button>
+  <h2>Выкинуть свой ярлык</h2>
+  <p id="f-demo" class="err" hidden>Приём ярлыков ещё не открыт. Загляни чуть позже.</p>
+  <label>Название<input id="fn" type="text" maxlength="40" required placeholder="Например, Карта старого Сухума"></label>
+  <label>Ссылка<input id="fu" type="url" maxlength="300" required placeholder="https://…" inputmode="url"></label>
+  <label>Что это
+    <select id="fc"><option>сайт</option><option>игра</option><option>фильм</option><option>видео</option></select>
+  </label>
+  <label>Пара слов, зачем туда идти<textarea id="fd" maxlength="140" placeholder="Необязательно"></textarea></label>
+  <label class="check"><input type="checkbox" id="fbig"> Хочу ярлык крупнее, свяжитесь со мной</label>
+  <div id="fbigbox" hidden>
+    <div class="sizes" role="radiogroup" aria-label="Желаемый размер">
+      <label><input type="radio" name="fz" value="M" checked><b>M</b></label>
+      <label><input type="radio" name="fz" value="L"><b>L</b></label>
+      <label><input type="radio" name="fz" value="XL"><b>XL</b></label>
+    </div>
+    <label style="margin-top:8px">Как с тобой связаться<input id="fcontact" type="text" maxlength="80" placeholder="Telegram, телефон или почта"></label>
+  </div>
+  <p class="meta">Бесплатный ярлык размера S. Его проверят вручную: без казино, пиратства и 18+. После проверки его увидят все.</p>
+  <p class="err" id="ferr" hidden></p>
+  <button type="submit" class="hot" id="fsend">Выкинуть на свалку</button>
+</form>
+
+<div class="sheet" id="rules" hidden>
+  <button type="button" class="x" data-close aria-label="Закрыть">×</button>
+  <h2>Как устроена свалка</h2>
+  <ul>
+    <li>Таскай ярлыки мышкой или пальцем. Нажми, чтобы открыть карточку.</li>
+    <li>Что открывают, то блестит и всплывает. Что никому не нужно, ржавеет и тонет.</li>
+    <li>Каждый день в 12:00 по Москве приезжает мусоровоз с новым.</li>
+    <li>Выкинуть свою находку может любой, бесплатно. Каждую ссылку проверяет человек.</li>
+    <li>Нельзя: казино и ставки, пиратство, 18+, мошенничество. Такое вывозим без разговоров.</li>
+    <li>Увидел плохую ссылку? Открой ярлык и нажми «Пожаловаться».</li>
+  </ul>
+  <p class="meta">Сайт не собирает cookies и не следит за тобой. Мы храним только то, что ты сам отправил.</p>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="config.js"></script>
+<script src="vendor/matter.min.js"></script>
+<script>
+'use strict';
+const {Engine,Bodies,Body,Composite,Mouse,MouseConstraint,Query} = Matter;
+
+/* ========== Настройки ========== */
+const CFG = window.SVALKA_CONFIG || {};
+const BASE = String(CFG.supabaseUrl||'').replace(/\/+$/,'');
+const KEY = String(CFG.supabaseKey||'');
+const LIVE = !!(BASE && KEY);
+const TRUCK_HOUR_UTC = 9;               // 12:00 по Москве
+const POLL_MS = 120000;                 // как часто проверять новые одобренные ярлыки
+const SUBMIT_LIMIT = 5;                 // столько же разрешает база; здесь только чтобы не гонять лишние запросы
+
+/* ========== Хранилище браузера (может быть недоступно) ========== */
+const store = {
+  get(k,d){try{const v=localStorage.getItem('svalka_'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('svalka_'+k,JSON.stringify(v))}catch(e){}}
+};
+
+/* ========== Стартовый набор: демо-режим и запас, если база не ответила ========== */
+const YT = s => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(s);
+const AR = s => 'https://archive.org/search?query=' + encodeURIComponent(s);
+const SEED = [
+ ['Википедия','сайт','Свободная энциклопедия на сотнях языков','https://ru.wikipedia.org','L'],
+ ['Internet Archive','сайт','Архив старых сайтов, книг, фильмов и программ','https://archive.org','M'],
+ ['Проект Гутенберг','сайт','Десятки тысяч бесплатных книг','https://www.gutenberg.org','M'],
+ ['OpenStreetMap','сайт','Открытая карта мира, которую рисуют люди','https://www.openstreetmap.org','S'],
+ ['Radio Garden','сайт','Крутишь глобус и слушаешь радио любого города','https://radio.garden','M'],
+ ['Windy','сайт','Живая карта ветра и погоды','https://www.windy.com','S'],
+ ['neal.fun','сайт','Странные интерактивные игрушки','https://neal.fun','S'],
+ ['Stellarium Web','сайт','Звёздное небо прямо в браузере','https://stellarium-web.org','S'],
+ ['Arts & Culture','сайт','Музеи мира онлайн','https://artsandculture.google.com','M'],
+ ['Khan Academy','сайт','Бесплатные уроки по математике и наукам','https://ru.khanacademy.org','S'],
+ ['Desmos','сайт','Графический калькулятор','https://www.desmos.com/calculator','S'],
+ ['Excalidraw','сайт','Рисовалка схем от руки','https://excalidraw.com','S'],
+ ['Arzamas','сайт','Курсы по истории и культуре','https://arzamas.academy','M'],
+ ['NASA','сайт','Космос из первых рук','https://www.nasa.gov','L'],
+ ['Lichess','игра','Шахматы без рекламы и подписок','https://lichess.org','M'],
+ ['itch.io','игра','Тысячи инди-игр','https://itch.io','L'],
+ ['2048','игра','Складывай плитки до 2048','https://play2048.co','S'],
+ ['Little Alchemy 2','игра','Смешивай стихии и создавай мир','https://littlealchemy2.com','S'],
+ ['A Dark Room','игра','Текстовая игра, которая разрастается','https://adarkroom.doublespeakgames.com','S'],
+ ['Quick, Draw!','игра','Рисуешь, нейросеть угадывает','https://quickdraw.withgoogle.com','S'],
+ ['Paperclips','игра','Делай скрепки. Очень много скрепок','https://www.decisionproblem.com/paperclips/','S'],
+ ['Slither.io','игра','Змейка против всего интернета','https://slither.io','M'],
+ ['Метрополис 1927','фильм','Немое кино, общественное достояние',AR('metropolis 1927'),'M'],
+ ['Генерал 1926','фильм','Бастер Китон, общественное достояние',AR('the general 1926 buster keaton'),'S'],
+ ['Кин-дза-дза!','фильм','Легально в онлайн-кинотеатре Мосфильма','https://cinema.mosfilm.ru','L'],
+ ['Сталкер','фильм','Тарковский, легально у Мосфильма','https://cinema.mosfilm.ru','M'],
+ ['TED','видео','Лекции по 18 минут обо всём','https://www.ted.com','M'],
+ ['TED-Ed','видео','Короткие анимированные уроки','https://ed.ted.com','S'],
+ ['Ёжик в тумане','видео','Мультфильм Норштейна',YT('ёжик в тумане союзмультфильм'),'S'],
+ ['Kurzgesagt','видео','Наука в мультиках',YT('kurzgesagt на русском'),'M'],
+].map(([n,c,desc,u,z],i)=>({dbId:null,key:'seed'+i,n,c,desc,u,z,opens:0,lastOpened:null,approvedAt:null}));
+
+// Свои вывески «место свободно»: честная реклама самой свалки, без выдуманных бизнесов.
+const HOUSE = [
+ {key:'house1',n:'Место для вывески',c:'реклама',desc:'Кафе, гостевой дом, мастерская — твоя вывеска может лежать здесь.',u:null,z:'L',house:true},
+ {key:'house2',n:'Тут свободно',c:'реклама',desc:'Маленькая вывеска для своего дела.',u:null,z:'M',house:true},
+];
+
+/* ========== Работа с базой (Supabase REST) ========== */
+const API = {
+  headers(extra){
+    const h = Object.assign({'apikey':KEY,'Content-Type':'application/json'}, extra||{});
+    if (KEY.startsWith('eyJ')) h.Authorization = 'Bearer ' + KEY;   // старый anon JWT
+    return h;
+  },
+  async labels(){
+    // Фильтр по статусу не нужен и невозможен: база сама отдаёт только одобренное.
+    const url = BASE + '/rest/v1/labels?select=id,name,url,category,description,size,opens,last_opened,approved_at'
+      + '&order=approved_at.desc.nullslast&limit=250';
+    const r = await fetch(url, {headers:this.headers()});
+    if (!r.ok) throw new Error('labels ' + r.status);
+    return (await r.json()).map(row => ({dbId:row.id,key:'db'+row.id,n:row.name,c:row.category,desc:row.description||'',
+      u:row.url,z:row.size,opens:row.opens||0,lastOpened:row.last_opened,approvedAt:row.approved_at}));
+  },
+  async insert(table,row){
+    const r = await fetch(BASE + '/rest/v1/' + table, {method:'POST',headers:this.headers({'Prefer':'return=minimal'}),body:JSON.stringify(row)});
+    if (!r.ok){
+      let msg = 'Не получилось отправить. Попробуй позже.';
+      try{const j = await r.json(); if (j && /Лимит|Очередь|Слишком/.test(j.message||'')) msg = j.message}catch(e){}
+      throw new Error(msg);
+    }
+  },
+  open(id){
+    if (!LIVE || !id) return;
+    fetch(BASE + '/rest/v1/rpc/open_label', {method:'POST',headers:this.headers(),body:JSON.stringify({p_label_id:id})}).catch(()=>{});
+  }
+};
+
+/* ========== Проверка ссылки до отправки (база проверяет ещё раз сама) ========== */
+const BLOCK = /(casino|kazino|казино|1xbet|torrent|торрент|rutracker|porn|xxx|warez|vulkan|займ)/i;
+function checkUrl(raw){
+  let u = raw.trim();
+  if (!u) return {err:'Вставь ссылку'};
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = 'https://' + u;
+  let p; try{ p = new URL(u) }catch(e){ return {err:'Это не похоже на ссылку'} }
+  if (p.protocol !== 'https:') return {err:'Нужна ссылка, начинающаяся с https://'};
+  if (!p.hostname.includes('.')) return {err:'Это не похоже на адрес сайта'};
+  if (u.length > 300) return {err:'Слишком длинная ссылка'};
+  if (BLOCK.test(u)) return {err:'Такие ссылки на свалку не принимаем'};
+  return {url:p.href};
+}
+function safeHref(u){ try{ const p = new URL(u); return p.protocol === 'https:' ? p.href : null }catch(e){ return null } }
+
+/* ========== Внешний вид ========== */
+const TYPE = {'сайт':'sticker','игра':'cart','фильм':'ticket','видео':'cassette','реклама':'sign'};
+const TIERS = {S:{w:92,h:40},M:{w:132,h:56},L:{w:180,h:74},XL:{w:240,h:98}};
+const SIGN = [['#d9442b','#fff6e0'],['#f2b705','#1e1c19'],['#2b5fa0','#fff'],['#2f7d52','#fff'],['#ece4cf','#b4532a'],['#6d3a8f','#ffe28a']];
+const CART = ['#c8402c','#3a6fb0','#3c8a5a','#e0a106','#7a4aa0'];
+const INK = '#1e1c19';
+
+/* ========== Блеск и ржавчина ========== */
+// Блеск считается относительно остальных ярлыков: самые открываемые блестят, самые забытые ржавеют.
+// Абсолютные числа не годятся: на старте у всех 0 открытий, и свалка стала бы рыжей целиком.
+function score(it){
+  const day = 864e5, now = Date.now();
+  const rec = it.lastOpened ? Math.exp(-(now - Date.parse(it.lastOpened)) / (7*day)) : 0;
+  return Math.log10(1 + (it.opens||0)) + rec;
+}
+function assignShine(list){
+  const sc = list.map(score), lo = Math.min(...sc), hi = Math.max(...sc), now = Date.now();
+  list.forEach((it, i) => {
+    let sh = hi > lo ? .2 + .8*(sc[i] - lo)/(hi - lo) : .5 + Math.random()*.35;   // все равны → нейтрально
+    if (it.approvedAt && now - Date.parse(it.approvedAt) < 3*864e5) sh = Math.max(sh, .9); // свежее блестит
+    it.shine = sh;
+  });
+  return list;
+}
+function baseShine(it){ return it.gold || it.house ? 1 : (it.shine ?? .6) }
+const Rust = {
+  touch(b){ b.it.shine = Math.min(1, b.it.shine + .3); this.apply(b); Body.applyForce(b, b.position, {x:0, y:-b.mass*.035}) },
+  tick(){ for (const b of items){ if (b.it.gold || b.it.house || b.it.pending) continue; b.it.shine = Math.max(.05, b.it.shine - .004); this.apply(b) } },
+  apply(b){ Body.setDensity(b, .0012 + .0028*(1 - b.it.shine)) },   // ржавое тяжелее и тонет
+  word(s){ return s>.75?'блестит':s>.45?'потускнел':s>.2?'ржавеет':'ржавый насквозь' }
+};
+
+const toastEl = document.getElementById('toast');
+/* ========== Физика и куча ========== */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W = innerWidth, H = innerHeight, dpr = Math.min(devicePixelRatio||1, 2), S = 1;
+const engine = Engine.create(); engine.gravity.y = 1.1;
+let walls = [], items = [], seq = 0, query = '', catalog = [];
+
+function scaleNow(){ S = Math.max(.62, Math.min(1, W/1100)) }
+function size(){
+  toastEl.style.top = Math.round(document.querySelector('.bar').getBoundingClientRect().bottom + 8) + 'px';
+  W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; scaleNow();
+  if (walls.length) Composite.remove(engine.world, walls);
+  const t = 400;
+  walls = [Bodies.rectangle(W/2, H+t/2-14, W*3, t, {isStatic:true, friction:.9}),
+           Bodies.rectangle(-t/2, H/2-H, t, H*4, {isStatic:true}),
+           Bodies.rectangle(W+t/2, H/2-H, t, H*4, {isStatic:true})];
+  Composite.add(engine.world, walls);
+  if (mouse) mouse.pixelRatio = dpr;
+  items.forEach(b => { if (b.position.x > W-10) Body.setPosition(b, {x:W-40, y:b.position.y}) });
+}
+function make(d, x, y, opts={}){
+  const tier = TIERS[d.z] || TIERS.S, w = tier.w*S, h = tier.h*S;
+  const b = Bodies.rectangle(x, y, w, h, {chamfer:{radius:Math.min(6,h/5)}, friction:.8, frictionStatic:1, restitution:.05, density:.002, angle:(Math.random()-.5)*1.2});
+  b.it = Object.assign({}, d, {id:++seq, w, h, type:d.gold?'gold':TYPE[d.c]||'sticker', pal:Math.floor(Math.random()*6)});
+  b.it.shine = opts.shine ?? baseShine(d);
+  if (opts.pending) b.it.pending = true;
+  items.push(b); Composite.add(engine.world, b); Rust.apply(b); return b;
+}
+function buildPile(list){
+  const limit = W*H*.5; let area = 0, i = 0;
+  make({n:'???', c:'клад', desc:'', u:null, z:'S', gold:true, key:'gold'}, W*(.25+Math.random()*.5), H-60, {shine:1});
+  // Ржавое кладём первым, чтобы оно оказалось внизу; блестящее сверху.
+  const order = [...list, ...HOUSE].sort((a,b) => baseShine(a) - baseShine(b) + (Math.random()-.5)*.25);
+  const maxRepeats = order.length < 25 ? 3 : order.length < 80 ? 2 : 1;   // пока ярлыков мало, куча добирается повторами
+  while (area < limit && i < order.length*maxRepeats){
+    const d = order[i % order.length], t = TIERS[d.z] || TIERS.S;
+    make(d, 40 + Math.random()*(W-80), H - 80 - i*(28*S)); area += t.w*t.h*S*S; i++;
+  }
+  for (let k = 0; k < 420; k++) Engine.update(engine, 1000/60);
+}
+function dropNew(list){
+  list.slice(0, 12).forEach((d,i) => make(d, 60 + Math.random()*(W-120), -80 - i*70, {shine:1}));
+  trimPile();
+}
+function trimPile(){
+  const max = Math.ceil(W*H*.5/(110*50*S*S)) + 12;
+  while (items.length > max){   // вывозим самое ржавое
+    let worst = null;
+    for (const b of items){ if (b.it.gold || b.it.house || b.it.pending) continue; if (!worst || b.it.shine < worst.it.shine) worst = b }
+    if (!worst) break;
+    Composite.remove(engine.world, worst); items.splice(items.indexOf(worst), 1);
+  }
+}
+
+/* ========== Мусоровоз: каждый день в 12:00 МСК ========== */
+function nextTruck(){
+  const d = new Date(); const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), TRUCK_HOUR_UTC);
+  return t > Date.now() ? t : t + 864e5;
+}
+const Truck = {
+  next: nextTruck(),
+  async arrive(){
+    this.next = nextTruck();
+    const fresh = await refresh();
+    shake();
+    toast(fresh ? 'Приехал мусоровоз: ' + fresh + ' ' + plural(fresh,'новый ярлык','новых ярлыка','новых ярлыков') + '.' : 'Приехал мусоровоз. Новых ярлыков пока нет: выкинь свой!');
+  },
+  tick(){
+    const s = Math.max(0, Math.ceil((this.next - Date.now())/1000));
+    const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = s%60;
+    document.getElementById('truck').textContent = '🚚 ' + (h ? h + ':' + String(m).padStart(2,'0') : m + ':' + String(sec).padStart(2,'0'));
+    if (s === 0) this.arrive();
+  }
+};
+
+/* ========== Загрузка и обновления ========== */
+async function refresh(){
+  if (!LIVE) return 0;
+  try{
+    const list = await API.labels();
+    const known = new Set(catalog.map(d => d.key));
+    const fresh = list.filter(d => !known.has(d.key));
+    catalog = assignShine(list);
+    if (fresh.length) dropNew(fresh);
+    return fresh.length;
+  }catch(e){ return 0 }
+}
+async function start(){
+  size(); makeNoise(); setupMouse();
+  let list = SEED;
+  if (LIVE){
+    try{ const db = await API.labels(); if (db.length) list = db }catch(e){ toast('База не ответила, показываем запасную кучу', 4000) }
+  }
+  catalog = assignShine(list);
+  buildPile(list);
+  document.getElementById('loading').hidden = true;
+  const last = store.get('seen', 0);
+  const fresh = last ? list.filter(d => d.approvedAt && Date.parse(d.approvedAt) > last).length : 0;
+  store.set('seen', Date.now());
+  setTimeout(() => toast(fresh
+    ? 'С твоего прошлого визита на свалку выкинули ' + fresh + ' ' + plural(fresh,'ярлык','ярлыка','ярлыков') + '.'
+    : 'Тащи ярлыки мышкой или пальцем. Нажми на ярлык, чтобы открыть. На дне спрятан клад.', 5200), 400);
+  loop();
+  setInterval(() => Truck.tick(), 1000);
+  setInterval(() => Rust.tick(), 15000);
+  if (LIVE) setInterval(refresh, POLL_MS);
+}
+
+/* ========== Отрисовка ========== */
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,w,h,r) : ctx.rect(x,y,w,h) }
+function fit(text,maxW,maxSize,font,minSize=7){ let s = maxSize; ctx.font = `${s}px ${font}`; while (s > minSize && ctx.measureText(text).width > maxW){ s -= 1; ctx.font = `${s}px ${font}` } return s }
+function label(text,x,y,maxW,maxSize,font,color,align='center'){ fit(text,maxW,maxSize,font); ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(text,x,y) }
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v);
+const DISP = css('--display'), MONO = css('--mono'), BODYF = css('--body');
+
+function drawItem(it){
+  const w = it.w, h = it.h, x = -w/2, y = -h/2; ctx.lineWidth = 2; ctx.strokeStyle = INK;
+  switch (it.type){
+  case 'sign':{ const [bg,fg] = SIGN[it.pal];
+    rr(x,y,w,h,3); ctx.fillStyle = bg; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = INK; [[x+7,y+7],[x+w-7,y+7],[x+7,y+h-7],[x+w-7,y+h-7]].forEach(([a,b]) => { ctx.beginPath(); ctx.arc(a,b,2,0,7); ctx.fill() });
+    label(it.n.toUpperCase(),0,1,w-22,h*.36,DISP,fg); break }
+  case 'cassette':{
+    rr(x,y,w,h,4); ctx.fillStyle = '#2b2825'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#efe6cf'; ctx.fillRect(x+6,y+5,w-12,h*.42); ctx.fillStyle = '#b4532a'; ctx.fillRect(x+6,y+5+h*.42-3,w-12,3);
+    label(it.n,0,y+5+h*.2,w-20,h*.24,BODYF,INK);
+    const ry = y+h*.72, r = h*.13; ctx.fillStyle = '#5a544c'; rr(-w*.28,ry-r-3,w*.56,r*2+6,r+3); ctx.fill();
+    ctx.fillStyle = '#efe6cf'; [-w*.17,w*.17].forEach(cx => { ctx.beginPath(); ctx.arc(cx,ry,r,0,7); ctx.fill() }); break }
+  case 'cart':{ const col = CART[it.pal%5];
+    ctx.beginPath(); ctx.moveTo(x+6,y); ctx.lineTo(x+w-6,y); ctx.lineTo(x+w,y+6); ctx.lineTo(x+w,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,y+6); ctx.closePath();
+    ctx.fillStyle = '#a39d92'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = col; ctx.fillRect(x+8,y+7,w-16,h*.58); ctx.strokeRect(x+8,y+7,w-16,h*.58);
+    label(it.n,0,y+7+h*.29,w-26,h*.3,DISP,'#fff'); break }
+  case 'ticket':{ const r = h*.16;
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+w,y); ctx.lineTo(x+w,-r); ctx.arc(x+w,0,r,-Math.PI/2,Math.PI/2,true);
+    ctx.lineTo(x+w,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,r); ctx.arc(x,0,r,Math.PI/2,-Math.PI/2,true); ctx.closePath();
+    ctx.fillStyle = '#ecd29c'; ctx.fill(); ctx.stroke();
+    ctx.setLineDash([3,3]); ctx.strokeStyle = '#8c6b3a'; ctx.beginPath(); ctx.moveTo(x+w*.78,y+4); ctx.lineTo(x+w*.78,y+h-4); ctx.stroke(); ctx.setLineDash([]);
+    label('КИНО',x+w*.89,0,w*.18,h*.2,MONO,'#8c6b3a'); label(it.n,x+w*.39,-h*.06,w*.68,h*.28,DISP,INK); break }
+  case 'gold':{
+    rr(x,y,w,h,3); ctx.fillStyle = '#e9b52b'; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#9b6a10'; ctx.beginPath(); ctx.moveTo(x+w/2,y); ctx.lineTo(x+w/2,y+h); ctx.moveTo(x,y+h*.38); ctx.lineTo(x+w,y+h*.38); ctx.stroke();
+    label('?',0,h*.12,w,h*.6,DISP,INK); return }
+  default:{
+    rr(x,y,w,h,h*.22); ctx.fillStyle = '#fbf8f1'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = SIGN[it.pal][0]; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,h*.34,h,[h*.22,0,0,h*.22]) : ctx.rect(x,y,h*.34,h); ctx.fill(); ctx.stroke();
+    const tx = x+h*.34+6, tw = w-h*.34-12; label(it.n,tx,-h*.1,tw,h*.32,BODYF,INK,'left');
+    let dom = ''; try{ dom = new URL(it.u).hostname.replace('www.','') }catch(e){}
+    label(dom,tx,h*.24,tw,h*.18,MONO,'#6b645a','left') }
+  }
+  const rust = 1 - it.shine;   // ржавчина пятнами
+  if (rust > .3){ ctx.save(); rr(x,y,w,h,4); ctx.clip(); ctx.globalAlpha = (rust-.3)*.85; ctx.fillStyle = '#6b2f15'; ctx.fillRect(x,y,w,h);
+    ctx.globalAlpha = rust-.3; ctx.fillStyle = '#b4532a';
+    for (let k = 0; k < 6; k++){ const px = x+((it.id*37+k*53)%100)/100*w, py = y+((it.id*17+k*71)%100)/100*h; ctx.beginPath(); ctx.arc(px,py,h*(.12+k%3*.06),0,7); ctx.fill() }
+    ctx.restore() }
+  if (it.shine > .8){ ctx.save(); ctx.globalAlpha = .55; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x+w*.15,y+h-4); ctx.lineTo(x+w*.15+h*.6,y+4); ctx.stroke(); ctx.restore() }
+  if (it.pending){ ctx.save(); ctx.rotate(-.12); ctx.fillStyle = 'rgba(180,83,42,.9)'; ctx.fillRect(-w*.32,-9,w*.64,18); label('НА ПРОВЕРКЕ',0,0,w*.6,11,MONO,'#fff'); ctx.restore() }
+}
+let noise;
+function makeNoise(){ const n = document.createElement('canvas'); n.width = n.height = 160; const g = n.getContext('2d');
+  for (let i = 0; i < 900; i++){ g.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.09)' : 'rgba(255,255,255,.07)'; g.fillRect(Math.random()*160, Math.random()*160, 1+Math.random()*2, 1+Math.random()*2) }
+  noise = ctx.createPattern(n,'repeat') }
+function matches(it){ if (!query) return true; const s = (it.n+' '+it.c+' '+it.desc+' '+(it.u||'')).toLowerCase(); return query.split(/\s+/).every(w => s.includes(w)) }
+function draw(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = '#8a8377'; ctx.fillRect(0,0,W,H); ctx.fillStyle = noise; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.beginPath(); ctx.rect(0,H-14,W,14); ctx.clip(); ctx.fillStyle = '#f2b705'; ctx.fillRect(0,H-14,W,14);
+  ctx.fillStyle = INK; for (let k = -20; k < W+20; k += 22){ ctx.beginPath(); ctx.moveTo(k,H); ctx.lineTo(k+11,H); ctx.lineTo(k+25,H-14); ctx.lineTo(k+14,H-14); ctx.fill() } ctx.restore();
+  for (const b of items){ const m = matches(b.it);
+    ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); ctx.globalAlpha = m ? 1 : .22;
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(-b.it.w/2+3,-b.it.h/2+4,b.it.w,b.it.h);
+    drawItem(b.it);
+    if (query && m){ ctx.lineWidth = 3; ctx.strokeStyle = '#f2b705'; rr(-b.it.w/2-3,-b.it.h/2-3,b.it.w+6,b.it.h+6,6); ctx.stroke() }
+    ctx.restore() }
+}
+function loop(){
+  Engine.update(engine, 1000/60);
+  for (const b of items) if (b.position.y > H+300 || b.position.x < -300 || b.position.x > W+300){ Body.setPosition(b,{x:W/2,y:-60}); Body.setVelocity(b,{x:0,y:0}) }
+  draw(); requestAnimationFrame(loop);
+}
+
+/* ========== Окна ========== */
+const card = document.getElementById('card'), form = document.getElementById('form'), rules = document.getElementById('rules');
+let toastT;
+function toast(t, ms=3400){ toastEl.textContent = t; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => toastEl.hidden = true, ms) }
+function closeAll(){ card.hidden = true; form.hidden = true; rules.hidden = true; card.dataset.key = '' }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+function plural(n,a,b,c){ const m10 = n%10, m100 = n%100; return m10===1&&m100!==11 ? a : m10>=2&&m10<=4&&(m100<10||m100>=20) ? b : c }
+function show(el){ closeAll(); el.hidden = false; const f = el.querySelector('input,select,textarea,button:not(.x)'); f && f.focus({preventScroll:true}) }
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeAll() });
+
+function renderCard(it){
+  const href = safeHref(it.u);
+  const link = it.pending ? `<span class="meta">Ссылка откроется после проверки</span>`
+    : href ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow ugc">${esc(href.replace(/^https:\/\//,'').replace(/\/$/,''))}</a>` : '';
+  if (it.house) return `<button type="button" class="x" data-close aria-label="Закрыть">×</button>
+    <div class="row"><span class="chip">вывеска</span></div><h2>${esc(it.n)}</h2><p>${esc(it.desc)}</p>
+    <div class="row"><button type="button" class="hot" data-act="sign">Хочу вывеску</button></div>`;
+  return `<button type="button" class="x" data-close aria-label="Закрыть">×</button>
+    <div class="row"><span class="chip">${esc(it.c)}</span><span class="chip w">размер ${esc(it.z)}</span></div>
+    <h2>${esc(it.n)}</h2>${it.desc ? `<p>${esc(it.desc)}</p>` : ''}${link}
+    <div class="meta"><span class="${it.pending?'st-wait':'st-ok'}">${it.pending ? 'На проверке' : '✓ Проверено человеком'}</span>
+      ${it.opens ? `<span>открывали: ${it.opens}</span>` : ''}<span>${Rust.word(it.shine)}</span></div>
+    <div class="shine" aria-hidden="true"><i style="width:${Math.round(it.shine*100)}%"></i></div>
+    ${it.pending ? '' : `<div class="row"><button type="button" class="hot" data-act="lift">Хочу поднять наверх</button>
+      <button type="button" data-act="report">Пожаловаться</button></div>`}`;
+}
+function openCard(b){
+  if (b.it.gold) return openTreasure(b);
+  if (!b.it.house && !b.it.pending){
+    Rust.touch(b);
+    const seen = store.get('opened', {}), k = b.it.key;
+    if (!seen[k] || Date.now() - seen[k] > 36e5){ seen[k] = Date.now(); store.set('opened', seen); API.open(b.it.dbId); b.it.opens = (b.it.opens||0) + 1 }
+  }
+  card.innerHTML = renderCard(b.it); show(card); card.dataset.key = b.it.key;
+  card.querySelectorAll('[data-act]').forEach(btn => btn.onclick = () => askRequest(btn.dataset.act, b.it));
+  const a = card.querySelector('a'); a && a.focus({preventScroll:true});
+}
+function openTreasure(b){
+  card.innerHTML = `<button type="button" class="x" data-close aria-label="Закрыть">×</button><span class="chip">КЛАД</span>
+    <h2>Ты докопался до дна</h2><p>Скоро здесь будут призы от спонсоров: их закапывают на дно и перепрятывают каждую неделю.</p>
+    <div class="row"><button type="button" class="hot" data-act="sponsor">Хочу закопать свой приз</button></div>`;
+  show(card);
+  card.querySelector('[data-act]').onclick = () => askRequest('sponsor', null);
+  Body.setPosition(b, {x:Math.random()*(W-100)+50, y:-60});   // клад перепрятывается
+}
+
+/* ========== Заявки вместо оплаты ========== */
+const ASK = {
+  lift:   {title:'Поднять ярлык наверх', text:'Платного подъёма пока нет. Оставь контакт, напишем, когда запустим.', contact:true},
+  sign:   {title:'Своя вывеска на свалке', text:'Расскажи, что за дело, и оставь контакт. Свяжемся и договоримся о размере и сроке.', contact:true, note:'Что за дело'},
+  sponsor:{title:'Закопать свой приз', text:'Промокод, скидка или подарок для тех, кто докопается до дна. Оставь контакт.', contact:true, note:'Что за приз'},
+  report: {title:'Пожаловаться на ярлык', text:'Что не так с этой ссылкой? Проверим и уберём, если нарушает правила.', contact:false, note:'Что не так', noteRequired:true},
+};
+function askRequest(kind, it){
+  const a = ASK[kind];
+  card.innerHTML = `<button type="button" class="x" data-close aria-label="Закрыть">×</button>
+    <h2>${esc(a.title)}</h2>${it ? `<p class="meta">Ярлык: ${esc(it.n)}</p>` : ''}<p>${esc(a.text)}</p>
+    ${!LIVE ? '<p class="err">Приём заявок ещё не открыт. Загляни чуть позже.</p>' : ''}
+    ${a.note ? `<label>${esc(a.note)}<textarea id="rq-note" maxlength="300"></textarea></label>` : ''}
+    ${a.contact ? `<label>Как с тобой связаться<input id="rq-contact" type="text" maxlength="80" placeholder="Telegram, телефон или почта"></label>` : ''}
+    <p class="err" id="rq-err" hidden></p>
+    <div class="row"><button type="button" class="hot" id="rq-send" ${LIVE ? '' : 'disabled'}>Отправить</button></div>`;
+  show(card);
+  card.querySelector('#rq-send').onclick = async () => {
+    const note = (card.querySelector('#rq-note')?.value || '').trim(), contact = (card.querySelector('#rq-contact')?.value || '').trim();
+    const err = card.querySelector('#rq-err'); err.hidden = true;
+    if (a.contact && contact.length < 3){ err.textContent = 'Оставь контакт, иначе мы не сможем ответить'; err.hidden = false; return }
+    if (a.noteRequired && note.length < 3){ err.textContent = 'Напиши хотя бы пару слов'; err.hidden = false; return }
+    const btn = card.querySelector('#rq-send'); btn.disabled = true; btn.textContent = 'Отправляем…';
+    try{
+      await API.insert('requests', {kind, label_id: it && it.dbId || null, contact, note: (it && !it.dbId ? it.n + ' — ' : '') + note});
+      closeAll(); toast(kind === 'report' ? 'Спасибо, проверим.' : 'Заявка отправлена. Свяжемся с тобой.');
+    }catch(e){ err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = 'Отправить' }
+  };
+}
+
+/* ========== Подача ярлыка ========== */
+const fbig = document.getElementById('fbig'), fbigbox = document.getElementById('fbigbox'), ferr = document.getElementById('ferr');
+fbig.onchange = () => fbigbox.hidden = !fbig.checked;
+document.getElementById('add').onclick = () => { document.getElementById('f-demo').hidden = LIVE; document.getElementById('fsend').disabled = !LIVE; ferr.hidden = true; show(form) };
+form.addEventListener('submit', async e => {
+  e.preventDefault(); ferr.hidden = true;
+  const fail = t => { ferr.textContent = t; ferr.hidden = false };
+  const n = document.getElementById('fn').value.trim();
+  const c = document.getElementById('fc').value;
+  const desc = document.getElementById('fd').value.trim();
+  if (!n) return fail('Придумай название');
+  const chk = checkUrl(document.getElementById('fu').value);
+  if (chk.err) return fail(chk.err);
+  if (BLOCK.test(n + ' ' + desc)) return fail('Такое на свалку не принимаем');
+  const contact = document.getElementById('fcontact').value.trim();
+  if (fbig.checked && contact.length < 3) return fail('Для крупного ярлыка оставь контакт');
+  const today = new Date().toISOString().slice(0,10), sent = store.get('sent', {});
+  if ((sent[today]||0) >= SUBMIT_LIMIT) return fail('На сегодня хватит: не больше ' + SUBMIT_LIMIT + ' ярлыков в сутки');
+  const btn = document.getElementById('fsend'); btn.disabled = true; btn.textContent = 'Выкидываем…';
+  try{
+    await API.insert('labels', {name:n, url:chk.url, category:c, description:desc});
+    if (fbig.checked){
+      const z = form.querySelector('input[name=fz]:checked').value;
+      try{ await API.insert('requests', {kind:'size', wanted_size:z, contact, note:n + ' — ' + chk.url}) }catch(e){}   // ярлык уже принят, заявка вторична
+    }
+    store.set('sent', {[today]: (sent[today]||0) + 1});
+    closeAll(); form.reset(); fbigbox.hidden = true;
+    make({key:'mine'+Date.now(), n, c, desc, u:chk.url, z:'S'}, W/2 + (Math.random()-.5)*W*.4, -100, {pending:true, shine:1});
+    toast('Ярлык отправлен на проверку. После одобрения его увидят все.', 5000);
+  }catch(err){ fail(err.message) }
+  finally{ btn.disabled = false; btn.textContent = 'Выкинуть на свалку' }
+});
+
+/* ========== Ввод ========== */
+let mouse, mc;
+function setupMouse(){
+  mouse = Mouse.create(cv); mouse.pixelRatio = dpr;
+  ['wheel','mousewheel','DOMMouseScroll'].forEach(e => cv.removeEventListener(e, mouse.mousewheel));
+  mc = MouseConstraint.create(engine, {mouse, constraint:{stiffness:.18, damping:.1, render:{visible:false}}});
+  Composite.add(engine.world, mc);
+}
+let down = null;
+cv.addEventListener('pointerdown', e => { down = {x:e.clientX, y:e.clientY, t:Date.now()} });
+cv.addEventListener('pointerup', e => {
+  if (!down) return; const dx = e.clientX-down.x, dy = e.clientY-down.y;
+  if (dx*dx + dy*dy < 49 && Date.now()-down.t < 450){ const hit = Query.point(items, {x:e.clientX, y:e.clientY}); if (hit.length) openCard(hit[hit.length-1]); else closeAll() }
+  down = null;
+});
+const q = document.getElementById('q'), cnt = document.getElementById('cnt');
+q.addEventListener('input', () => { query = q.value.trim().toLowerCase(); cnt.textContent = query ? items.filter(b => matches(b.it) && !b.it.gold).length + ' найдено' : '' });
+document.getElementById('lift').onclick = () => {
+  if (!query){ toast('Сначала введи что-нибудь в поиск'); q.focus(); return }
+  const found = items.filter(b => matches(b.it) && !b.it.gold);
+  if (!found.length){ toast('На свалке такого нет. Попробуй «игра» или «кино»'); return }
+  found.forEach((b,i) => { Body.setPosition(b, {x:60+Math.random()*(W-120), y:-60-i*40}); Body.setVelocity(b,{x:0,y:0}); items.splice(items.indexOf(b),1); items.push(b) });
+  toast('Достали: ' + found.length);
+};
+function shake(){ items.forEach(b => { Body.setVelocity(b, {x:(Math.random()-.5)*14, y:-6-Math.random()*14}); Body.setAngularVelocity(b, (Math.random()-.5)*.3) }) }
+document.getElementById('shake').onclick = shake;
+document.getElementById('help').onclick = () => show(rules);
+addEventListener('keydown', e => { if (e.key === 'Escape') closeAll() });
+addEventListener('resize', size);
+
+start();
+</script>
+</body>
+</html>
