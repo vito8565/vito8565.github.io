@@ -6,6 +6,6 @@
 // Эти ключи публичные по задумке: доступ ограничивают правила в supabase.sql.
 // НИКОГДА не вставляй сюда secret / service_role key.
 window.SVALKA_CONFIG = {
-  supabaseUrl: '',
-  supabaseKey: ''
+  supabaseUrl: 'https://gsshhzzhxvticbrrgzba.supabase.co',
+  supabaseKey: 'sb_publishable_SFh6MsXrPt-67fQIbno2cQ_WLKjdZQO'
 };
